@@ -1,0 +1,20 @@
+from tkinter import *
+
+class App:
+	def __init__(self, master):
+		frame = Frame(master)
+		frame.pack()
+		self.addFrameBtn = Button(
+				frame, text="Add Frame", command=self.add_frame
+				)
+		self.addFrameBtn.pack(side=LEFT)
+
+	def add_frame(self):
+		pass
+
+root = Tk()
+
+app = App(root)
+
+root.mainloop()
+root.destroy()
