@@ -84,8 +84,10 @@ class View:
                         name)
 
         def load_animation(self, name):
-                sheet = animation.load_animation(name)
-                print (sheet)
+                sheet, anim = animation.load_animation(name)
+                self.anim_view.animation = anim
+                return sheet
+                
 
         def set_duration(self, val):
                 if self.frame_view.frame and val > 0:
@@ -202,10 +204,16 @@ class App:
                 f.close()
 
         def load_animation(self):
+                self.new_file()
                 ftypes = [('XML', '*.xml')]
                 file = askopenfile(initialdir=".", filetypes=ftypes)
-                sheet, animation = self.view.load_animation(file)
-                print (sheet)
+                sheet = self.view.load_animation(file)
+                spritesheet = pygame.image.load(sheet)
+                self.view.set_spritesheet(spritesheet)
+                self.view.sheetpath = sheet
+                self.view.anim_view.animation.sheet = spritesheet
+                for f in range(1,1+len(self.view.anim_view.animation.frames)):
+                        self.frameListbox.insert(END, 'Frame %d' % f)
 
         def new_file(self):
                 self.view.reset()

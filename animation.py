@@ -48,6 +48,7 @@ def load_animation(filepath):
                 rect = (int(frame.attrib[x]) for x in 'xywh')
                 x,y,w,h = rect
                 anim_frame = AnimFrame(pygame.Rect(x,y,w,h))
+                anim_frame.duration = int(attrs['duration'])
                 for child in frame:
                         if len(child) > 0:
                                 for box in child:
@@ -58,7 +59,6 @@ def load_animation(filepath):
                                         elif box.tag == 'damagebox':
                                                 anim_frame.add_damagebox(pygame.Rect(x,y,w,h))
                 animation.add_frame(anim_frame)
-                       
         return (spritesheet, animation)
 
 class Animation:
@@ -90,7 +90,7 @@ class Animation:
 
 
         def draw(self, screen, x, y):
-                if len(self.frames) > 0:
+                if len(self.frames) > 0 and self.sheet:
                         frame = self.frames[self.current_frame]
                         screen.blit(self.sheet, (x, y), frame.rect)
                 
