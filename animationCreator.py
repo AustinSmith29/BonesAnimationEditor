@@ -183,12 +183,7 @@ class App:
                         self.frameListbox.insert(END, 'Frame %d' % index)
 
         def delete_frame(self):
-                if len(self.view.animation.frames) > 0:
-                        index = int(self.frameListbox.curselection()[0])
-                        frame = self.view.animation.frames.pop(index)
-                        if self.view.current_frame == frame:
-                                self.view.current_frame = None
-                        self.frameListbox.delete(ANCHOR)
+                pass
 
         def play_animation(self):
                 pass

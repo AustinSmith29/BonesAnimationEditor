@@ -211,14 +211,29 @@ class FrameSubView(SubView):
             self.box.w = mx - self.box.x
             self.box.h = my - self.box.y
 
+    def screen_to_frame(self, screen_rect):
+        nx = screen_rect.x - self.frame_rect.x
+        ny = screen_rect.y - self.frame_rect.y
+        w, h = screen_rect.w, screen_rect.h
+        return pygame.Rect(nx, ny, w, h)
+
+    def frame_to_screen(self, rect):
+        nx = rect.x + self.frame_rect.x
+        ny = rect.y + self.frame_rect.y
+        w, h = rect.w, rect.h
+        return pygame.Rect(nx, ny, w, h)
+
     def draw(self, surface):
         super().draw(surface)
         if self.frame and self.spritesheet:
             surface.blit(self.spritesheet, self.frame_rect, self.frame.rect)
             for hbox in self.frame.hitboxes:
-                pygame.draw.rect(surface, (0,0,255), hbox, 1)
+                # frame coords to screen cords
+                rect = self.frame_to_screen(hbox)
+                pygame.draw.rect(surface, (0,0,255), rect, 1)
             for dbox in self.frame.damageboxes:
-                pygame.draw.rect(surface, (255, 0, 0), dbox, 1)
+                rect = self.frame_to_screen(dbox)
+                pygame.draw.rect(surface, (255, 0, 0), rect, 1)
         pygame.draw.rect(surface, (255,0,0), self.box, 1)
 
     def reset(self):
@@ -226,18 +241,19 @@ class FrameSubView(SubView):
         self.frame = None
 
     def set_frame(self, frame):
-        #self.frame = self.spritesheet.subsurface(frame.rect)
         self.frame = frame
         self.frame_rect.w = self.frame.rect.w
         self.frame_rect.h = self.frame.rect.h
 
     def add_hitbox(self):
         if self.valid_box() and self.frame:
-            self.frame.add_hitbox(self.box)
+            rect = self.screen_to_frame(self.box)
+            self.frame.add_hitbox(rect)
 
     def add_damagebox(self):
         if self.valid_box() and self.frame:
-            self.frame.add_damagebox(self.box)
+            rect = self.screen_to_frame(self.box)
+            self.frame.add_damagebox(rect)
 
     def valid_box(self):
         return self.box.w != 0 and self.box.h != 0

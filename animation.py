@@ -52,8 +52,8 @@ def load_animation(filepath):
                 for child in frame:
                         if len(child) > 0:
                                 for box in child:
-                                        rect = (int(frame.attrib[x]) for x in 'xywh')
-                                        x,y,w,h = rect
+                                        box_rect = (int(box.attrib[x]) for x in 'xywh')
+                                        x,y,w,h = box_rect
                                         if box.tag == 'hitbox':
                                                 anim_frame.add_hitbox(pygame.Rect(x,y,w,h))
                                         elif box.tag == 'damagebox':
