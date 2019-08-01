@@ -72,6 +72,16 @@ class Animation:
         def add_frame(self, frame):
                 self.frames.append(copy.deepcopy(frame))
 
+        def remove_frame(self, index):
+                self.frames.pop(index)
+                index -= 1
+                if self.frames:
+                        if index < 0:
+                                return self.frames[0]
+                        else:
+                                return self.frames[index]
+                return None
+
         def play(self, screen):
                 self.playing = True
 
@@ -93,6 +103,13 @@ class Animation:
                 if len(self.frames) > 0 and self.sheet:
                         frame = self.frames[self.current_frame]
                         screen.blit(self.sheet, (x, y), frame.rect)
+
+        def is_complete(self):
+                return self.current_frame > len(self.frames)-2
+
+        def restart(self):
+                self.current_tick = 0
+                self.current_frame = 0
                 
 
 class AnimFrame:

@@ -39,8 +39,13 @@ class View:
                 
                 pygame.display.update()
 
-        def mainloop(self):
+        def mainloop(self, app):
                 for event in pygame.event.get():
+                        if event.type == pygame.KEYDOWN:
+                                if event.key == pygame.K_DOWN:
+                                        app.down_key()
+                                elif event.key == pygame.K_UP:
+                                        app.up_key()
                         for view in self.subviews:
                                 view.handle_event(event)
 
@@ -71,11 +76,23 @@ class View:
                 self.frame_view.set_frame(frame)
                 return len(self.anim_view.animation.frames)
 
+        def remove_frame(self, index):
+                prev_frame = self.anim_view.remove_frame(index)
+                if not prev_frame:
+                        self.anim_view.reset()
+                        self.frame_view.reset()
+                else:
+                        self.frame_view.set_frame(prev_frame)
+
         def add_hitbox(self):
                 self.frame_view.add_hitbox()
 
         def add_damagebox(self):
                 self.frame_view.add_damagebox()
+
+        def play_animation(self, loop):
+                self.anim_view.loop = loop
+                self.anim_view.play_animation()
 
         def save_animation(self, name):
                 return animation.save_animation(
@@ -104,9 +121,11 @@ class View:
 class App:
         def __init__(self, master):
                 self.master = master
+                self.master.title("Bones Animation Tool")
                 frame = Frame(master)
                 frame.pack()
                 self.spritesheet = None
+                self.frame_count = 0
 
                 self.view = View(frame, 800, 600)
 
@@ -115,10 +134,13 @@ class App:
                 self.frameListbox.bind('<<ListboxSelect>>', self.onselect)
                 self.frameListbox.pack()
 
-                self.newButton = Button(
-                        frame, text="New Animation", command=self.new_file
-                        )
-                self.newButton.pack()
+                self.menu = Menu(self.master)
+                self.master.config(menu=self.menu)
+                file = Menu(self.menu)
+                file.add_command(label="New", command=self.new_file)
+                file.add_command(label="Open...", command=self.load_animation)
+                file.add_command(label="Save...", command=self.save_animation)
+                self.menu.add_cascade(label="File", menu=file)
 
                 self.loadSheetBtn = Button(
                         frame, text="Load Sheet", command=self.load_sheet
@@ -145,27 +167,23 @@ class App:
                         )
                 self.deleteFrameBtn.pack()
 
+                self.playAnimationBtn = Button(
+                        frame, text="Play Animation", command=self.play_animation
+                        )
+                self.playAnimationBtn.pack()
+
+                self.loop = BooleanVar()
+                self.loopCheckbtn = Checkbutton(
+                        frame, text="loop", variable=self.loop
+                        )
+                self.loopCheckbtn.pack()
+
                 Label(frame, text="Frame Duration").pack()
                 self.duration = StringVar()
                 self.duration.trace("w", lambda name, index, mode, val=self.duration: self.change_duration(val))
                 self.frameDurationEntry = Entry(frame, textvariable=self.duration)
                 self.frameDurationEntry.insert(0, "1")
                 self.frameDurationEntry.pack()
-                
-                self.playAnimation = Button(
-                        frame, text="Play Animation", command=self.play_animation
-                        )
-                self.playAnimation.pack()
-
-                self.saveButton = Button(
-                        frame, text="Save", command=self.save_animation
-                        )
-                self.saveButton.pack()
-
-                self.loadButton = Button(
-                        frame, text="Load", command=self.load_animation
-                        )
-                self.loadButton.pack()
 
         def change_duration(self, val):
                 if val.get().isdigit():
@@ -180,13 +198,18 @@ class App:
         def add_frame(self):
                 index = self.view.add_frame(int(self.duration.get()))
                 if index:
-                        self.frameListbox.insert(END, 'Frame %d' % index)
+                        self.frameListbox.insert(END, 'Frame %d' % self.frame_count)
+                        self.frame_count += 1
 
         def delete_frame(self):
-                pass
+                if self.frameListbox.size() > 0 and self.frameListbox.curselection():
+                        index = self.frameListbox.curselection()[0]
+                        self.frameListbox.delete(index)
+                        self.view.remove_frame(index)
 
         def play_animation(self):
-                pass
+                loop = (self.loop.get() == 1)
+                self.view.play_animation(loop)
 
         def save_animation(self):
                 ftypes = [("XML file", "*.xml"), ("All Files", "*.*")]
@@ -225,12 +248,41 @@ class App:
                 w = evt.widget
                 if w.curselection():
                         index = int(w.curselection()[0])
-                        self.view.set_detail_frame(index)
-                        current_duration = self.view.get_frame_duration()
-                        self.duration.set(str(current_duration))
+                        self.set_listbox_selection(index)
+
+        def set_listbox_selection(self, index):
+                if self.frameListbox.size() == 0:
+                        return
+                self.view.set_detail_frame(index)
+                current_duration = self.view.get_frame_duration()
+                self.duration.set(str(current_duration))
+                self.frameListbox.select_anchor(index)
+
+        def down_key(self):
+                self.frameListbox.focus_set()
+                if not self.frameListbox.curselection():
+                        self.set_listbox_selection(0)
+                else:
+                        index = int(self.frameListbox.curselection()[0])
+                        if index < self.frameListbox.size()-1:
+                                self.set_listbox_selection(index+1)
+                        else:
+                                self.set_listbox_selection(0)
+
+        def up_key(self):
+                self.frameListbox.focus_set()
+                if not self.frameListbox.curselection():
+                        self.set_listbox_selection(0)
+                else:
+                        index = int(self.frameListbox.curselection()[0])
+                        if index == 0:
+                                size = self.frameListbox.size()
+                                self.set_listbox_selection(size-1)
+                        else:
+                                self.set_listbox_selection(index-1)
 
         def mainloop(self):
-                self.view.mainloop()
+                self.view.mainloop(self)
                 
 
 root = Tk()

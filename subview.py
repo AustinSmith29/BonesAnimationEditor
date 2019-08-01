@@ -68,6 +68,8 @@ class SpritesheetSubView(SubView):
                         clip.normalize()
                         clip = self.cam_to_sheet(clip)
                         self.select_rect = self.shrink_frame(self.spritesheet, clip)
+                        if not self.select_rect:
+                            self.select_rect = pygame.Rect(0,0,0,0)
 
     def tick(self):
         super().tick()
@@ -197,10 +199,12 @@ class FrameSubView(SubView):
                 mx, my = pygame.mouse.get_pos()
                 select_start = (self.box.x, self.box.y)
                 # clip won't work if top left of select_rect is out of bounds
+                """
                 if not self.frame_rect.collidepoint(select_start):
                     self.box = pygame.Rect(0,0,0,0)
                 else:
                     self.box = self.box.clip(self.frame_rect)
+                    """
                     
 
     def tick(self):
@@ -242,8 +246,9 @@ class FrameSubView(SubView):
 
     def set_frame(self, frame):
         self.frame = frame
-        self.frame_rect.w = self.frame.rect.w
-        self.frame_rect.h = self.frame.rect.h
+        if frame:
+            self.frame_rect.w = self.frame.rect.w
+            self.frame_rect.h = self.frame.rect.h
 
     def add_hitbox(self):
         if self.valid_box() and self.frame:
@@ -262,14 +267,24 @@ class AnimationSubView(SubView):
     def __init__(self, parent, rect_coords):
         super().__init__(parent, rect_coords, 'Animation View')
         self.animation = None
+        self.is_playing = False
+        self.loop = False
 
     def handle_event(self, event):
         super().handle_event(event)
 
     def tick(self):
         super().tick()
-        if self.animation:
-            self.animation.step()
+        if self.animation and self.is_playing:
+            if self.animation.is_complete() and not self.loop:
+                self.is_playing = False
+            else:
+                self.animation.step()
+
+    def play_animation(self):
+        if self.animation and not self.is_playing:
+            self.is_playing = True
+            self.animation.restart()
 
     def draw(self, surface):
         super().draw(surface)
@@ -280,8 +295,17 @@ class AnimationSubView(SubView):
     def reset(self):
         super().reset()
         self.animation = None
+        self.play = False
 
     def add_frame(self, frame):
         if not self.animation:
             self.animation = Animation(self.spritesheet)
         self.animation.add_frame(frame)
+
+    def remove_frame(self, index):
+        if self.animation:
+            frame = self.animation.remove_frame(index)
+            self.animation.restart()
+            if not frame:
+                self.animation = None
+            return frame
